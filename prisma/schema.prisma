@@ -1,0 +1,83 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id             String  @id @default(uuid())
+  email          String  @unique
+  emailVerified  Boolean
+  username       String
+  hashedPassword String
+  role           Role    @default(USER)
+
+  sessions                 Session[]
+  emailVerificationRequest EmailVerificationRequest?
+  passwordResetSession     PasswordResetSession?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+enum Role {
+  USER
+  ADMIN
+}
+
+model Session {
+  id        String   @id @default(uuid())
+  expiresAt DateTime
+
+  userId String
+  user   User   @relation(references: [id], fields: [userId], onDelete: Cascade)
+
+  refreshTokens RefreshToken[]
+  accessToken   AccessToken?
+}
+
+model RefreshToken {
+  id      String    @id
+  isValid Boolean   @default(true)
+  usedAt  DateTime?
+
+  sessionId String
+  session   Session @relation(references: [id], fields: [sessionId], onDelete: Cascade)
+}
+
+model AccessToken {
+  id        String   @id
+  expiresAt DateTime
+
+  sessionId String  @unique
+  session   Session @relation(references: [id], fields: [sessionId], onDelete: Cascade)
+}
+
+model EmailVerificationRequest {
+  id        String   @id
+  code      String
+  email     String   @unique
+  expiresAt DateTime
+
+  userId String @unique
+  user   User   @relation(references: [id], fields: [userId], onDelete: Cascade)
+}
+
+model PasswordResetSession {
+  id            String   @id
+  code          String
+  email         String   @unique
+  expiresAt     DateTime
+
+  userId String @unique
+  user   User   @relation(references: [id], fields: [userId], onDelete: Cascade)
+}
