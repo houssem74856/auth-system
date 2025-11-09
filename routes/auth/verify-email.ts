@@ -4,6 +4,7 @@ import db from "../../lib/db.js";
 import { encodeHexLowerCase } from "@oslojs/encoding";
 import { sha256 } from "@oslojs/crypto/sha2";
 import { consumeTokenBucket } from "../../utils/rateLimit.js";
+import { cacheClient } from "../../lib/redisClient.js";
 
 const verifyEmailRouter = Router();
 
@@ -74,15 +75,28 @@ verifyEmailRouter.post("/", async (req: any, res: any) => {
     });
   }
 
-  const emailVerificationId = encodeHexLowerCase(
+  const emailVerificationRequestId = encodeHexLowerCase(
     sha256(new TextEncoder().encode(clientSideEmailVerificationRequestId))
   );
 
-  const verificationRequest = await db.emailVerificationRequest.findUnique({
-    where: {
-      id: emailVerificationId,
-    },
-  });
+  let verificationRequest = await cacheClient.get(
+    `cache:emailVerificationRequest:user:${currentUser.id}`
+  );
+  verificationRequest = verificationRequest
+    ? (() => {
+        const v = JSON.parse(verificationRequest);
+        if (v.id !== emailVerificationRequestId) return null;
+        return { ...v, expiresAt: new Date(v.expiresAt) };
+      })()
+    : null;
+
+  if (verificationRequest === null) {
+    verificationRequest = await db.emailVerificationRequest.findUnique({
+      where: {
+        id: emailVerificationRequestId,
+      },
+    });
+  }
 
   if (verificationRequest === null) {
     // emailVerificationId cookie manually forged
@@ -120,9 +134,13 @@ verifyEmailRouter.post("/", async (req: any, res: any) => {
 
   await db.emailVerificationRequest.delete({
     where: {
-      id: emailVerificationId,
+      id: emailVerificationRequestId,
     },
   });
+
+  await cacheClient.del(
+    `cache:emailVerificationRequest:user:${currentUser.id}`
+  );
 
   res.clearCookie("clientSideEmailVerificationRequestId", {
     httpOnly: true,

@@ -14,6 +14,7 @@ import { encodeHexLowerCase } from "@oslojs/encoding";
 import { sha256 } from "@oslojs/crypto/sha2";
 import { emailQueue } from "../../queues/emailQueue.js";
 import { consumeTokenBucket } from "../../utils/rateLimit.js";
+import { cacheClient } from "../../lib/redisClient.js";
 
 const signupRouter = Router();
 
@@ -64,15 +65,24 @@ signupRouter.post("/", async (req: any, res: any) => {
     sha256(new TextEncoder().encode(clientSideEmailVerificationRequestId))
   );
 
+  const verificationRequest = {
+    id: emailVerificationRequestId,
+    userId: newUser.id,
+    email: newUser.email,
+    code,
+    expiresAt,
+  };
+
   await db.emailVerificationRequest.create({
-    data: {
-      id: emailVerificationRequestId,
-      userId: newUser.id,
-      email: newUser.email,
-      code,
-      expiresAt,
-    },
+    data: verificationRequest,
   });
+
+  await cacheClient.set(
+    `cache:emailVerificationRequest:user:${newUser.id}`,
+    JSON.stringify(verificationRequest),
+    "EX",
+    60 * 15
+  );
 
   res.cookie(
     "clientSideEmailVerificationRequestId",

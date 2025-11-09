@@ -1,4 +1,4 @@
-import redisApp from "../lib/redisClient.js";
+import { rateLimiterClient } from "../lib/redisClient.js";
 import { normalizeIP } from "./auth.js";
 
 export async function consumeTokenBucket(
@@ -13,7 +13,7 @@ export async function consumeTokenBucket(
     return true;
   }
 
-  const result = await redisApp.tokenBucketConsume(
+  const result = await rateLimiterClient.tokenBucketConsume(
     `rate-limit:token-bucket:${clientIP}`,
     max.toString(),
     refillIntervalSeconds.toString(),
@@ -27,7 +27,7 @@ export async function consumeTokenBucket(
 export async function consumeRetryBackoff(
   userId: any
 ): Promise<{ valid: boolean; secondsLeft: number }> {
-  const result = await redisApp.retryBackoffConsume(
+  const result = await rateLimiterClient.retryBackoffConsume(
     `rate-limit:retry-backoff:${userId}`,
     Math.floor(Date.now() / 1000).toString()
   );
@@ -36,5 +36,5 @@ export async function consumeRetryBackoff(
 }
 
 export async function resetRetryBackoff(userId: any): Promise<void> {
-  await redisApp.del(`rate-limit:retry-backoff:${userId}`);
+  await rateLimiterClient.del(`rate-limit:retry-backoff:${userId}`);
 }

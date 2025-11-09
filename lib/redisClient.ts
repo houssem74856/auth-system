@@ -19,7 +19,11 @@ redisApp.defineCommand("retryBackoffConsume", {
   lua: script2,
 });
 
-export default redisApp;
+//for caching
+export const rateLimiterClient = redisApp;
+
+//for caching
+export const cacheClient = redisApp;
 
 // For BullMQ
 //@ts-ignore
