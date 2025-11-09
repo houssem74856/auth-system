@@ -92,7 +92,7 @@ resendCodeRouter.post("/", async (req: any, res: any) => {
     `cache:emailVerificationRequest:user:${currentUser.id}`,
     JSON.stringify(verificationRequest),
     "EX",
-    15 * 60
+    60 * 15
   );
 
   res.cookie(

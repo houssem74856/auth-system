@@ -19,7 +19,7 @@ redisApp.defineCommand("retryBackoffConsume", {
   lua: script2,
 });
 
-//for caching
+//for rate limiting
 export const rateLimiterClient = redisApp;
 
 //for caching
