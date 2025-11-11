@@ -60,6 +60,7 @@ listFailedEmailsRouter.get("/", async (req: any, res: any) => {
       {
         data: jobs.map((j) => ({
           id: j.id,
+          originalJobId: j.data.originalJobId,
           failedAt: new Date(j.data.failedAt).toISOString(),
           error: j.data.error,
           emailPayload: j.data.data,
