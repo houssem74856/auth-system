@@ -8,6 +8,8 @@ import resendCodeRouter from "./auth/resend-code.js";
 import refreshRouter from "./auth/refresh.js";
 import forgotPasswordRouter from "./auth/forgot-password.js";
 import resetPasswordRouter from "./auth/reset-password.js";
+import listFailedEmailsRouter from "./dlq/list-failed-emails.js";
+import retryFailedEmailRouter from "./dlq/retry-failed-email.js";
 
 const router = Router();
 
@@ -19,5 +21,8 @@ router.use("/auth/resend-code", resendCodeRouter);
 router.use("/auth/refresh", refreshRouter);
 router.use("/auth/forgot-password", forgotPasswordRouter);
 router.use("/auth/reset-password", resetPasswordRouter);
+
+router.use("/dlq/list-failed-emails", listFailedEmailsRouter);
+router.use("/dlq/retry-failed-email", retryFailedEmailRouter);
 
 export default router;

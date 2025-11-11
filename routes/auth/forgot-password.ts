@@ -77,21 +77,11 @@ forgotPasswordRouter.post("/", async (req: any, res: any) => {
     }
   );
 
-  await emailQueue.add(
-    "sendEmail",
-    {
-      to: user.email,
-      subject: "Password Reset Verification",
-      text: `Hello! You requested to reset your password. Your verification code is: ${code}. If you did not request a password reset, please ignore this email.`,
-    },
-    {
-      attempts: 5,
-      backoff: {
-        type: "exponential",
-        delay: 1000,
-      },
-    }
-  );
+  await emailQueue.add("sendEmail", {
+    to: user.email,
+    subject: "Password Reset Verification",
+    text: `Hello! You requested to reset your password. Your verification code is: ${code}. If you did not request a password reset, please ignore this email.`,
+  });
 
   res.status(200).json({
     message:

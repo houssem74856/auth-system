@@ -2,6 +2,7 @@ import "dotenv/config";
 import { redisWorkersConnection } from "../lib/redisClient.js";
 import { Worker } from "bullmq";
 import transporter from "../lib/emailTransporter.js";
+import { emailDLQ } from "../queues/emailDLQ.js";
 
 const emailWorker = new Worker(
   "emailQueue",
@@ -22,6 +23,17 @@ emailWorker.on("completed", (job) => {
   console.log(`Job ${job.id} completed`);
 });
 
-emailWorker.on("failed", (job, err) => {
-  console.error(`Job ${job?.id} failed:`, err);
+emailWorker.on("failed", async (job, err) => {
+  if (job?.attemptsMade === job?.opts.attempts) {
+    await emailDLQ.add("failedEmail", {
+      originalJobId: job?.id,
+      data: job?.data,
+      failedAt: Date.now(),
+      error: err.message,
+    });
+
+    console.error(`Job ${job?.id} failed for the final time:`, err.message);
+  } else {
+    console.error(`Job ${job?.id} failed:`, err.message);
+  }
 });

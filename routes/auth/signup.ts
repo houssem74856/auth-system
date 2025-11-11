@@ -96,21 +96,11 @@ signupRouter.post("/", async (req: any, res: any) => {
     }
   );
 
-  await emailQueue.add(
-    "sendEmail",
-    {
-      to: newUser.email,
-      subject: "Email Verification",
-      text: `Hello! Your verification code is: ${code}`,
-    },
-    {
-      attempts: 5,
-      backoff: {
-        type: "exponential",
-        delay: 1000,
-      },
-    }
-  );
+  await emailQueue.add("sendEmail", {
+    to: newUser.email,
+    subject: "Email Verification",
+    text: `Hello! Your verification code is: ${code}`,
+  });
 
   res.status(200).json({
     message: "User created, verification email queued.",
